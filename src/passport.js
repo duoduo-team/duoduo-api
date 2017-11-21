@@ -11,17 +11,18 @@
 /* eslint-disable no-param-reassign, no-underscore-dangle, max-len */
 
 import passport from 'passport';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { Strategy as FacebookStrategy } from 'passport-facebook';
-import { Strategy as TwitterStrategy } from 'passport-twitter';
+import { Strategy as WechatStrategy } from 'passport-wechat';
+import { Strategy as WeiboStrategy } from 'passport-weibo';
+import { Strategy as QQStrategy } from 'passport-qq';
+import { Strategy as LocalStrategy } from 'passport-local';
 
 import db from './db';
+import redis from './redis';
 
 passport.serializeUser((user, done) => {
   done(null, {
     id: user.id,
     displayName: user.displayName,
-    imageUrl: user.imageUrl,
   });
 });
 
@@ -31,7 +32,7 @@ passport.deserializeUser((user, done) => {
 
 // Creates or updates the external login credentials
 // and returns the currently authenticated user.
-async function login(req, provider, profile, tokens) {
+async function login(req, provider, profile, tokens, done) {
   let user;
 
   if (req.user) {
@@ -44,99 +45,55 @@ async function login(req, provider, profile, tokens) {
   if (!user) {
     user = await db
       .table('logins')
-      .innerJoin('users', 'users.id', 'logins.user_id')
+      .innerJoin('users', 'users.id', 'logins.userId')
       .where({ 'logins.provider': provider, 'logins.id': profile.id })
       .first('users.*');
-    if (
-      !user &&
-      profile.emails &&
-      profile.emails.length &&
-      profile.emails[0].verified === true
-    ) {
-      user = await db
-        .table('users')
-        .innerJoin('emails', 'emails.user_id', 'users.id')
-        .where({
-          'emails.email': profile.emails[0].value,
-          'emails.verified': true,
-        })
-        .first('users.*');
-    }
   }
-
   if (!user) {
-    // eslint-disable-next-line prefer-destructuring
-    user = (await db
-      .table('users')
-      .insert({
-        display_name: profile.displayName,
-        image_url:
-          profile.photos && profile.photos.length
-            ? profile.photos[0].value
-            : null,
-      })
-      .returning('*'))[0];
-
-    if (profile.emails && profile.emails.length) {
-      await db.table('emails').insert(
-        profile.emails.map(x => ({
-          user_id: user.id,
-          email: x.value,
-          verified: x.verified || false,
-        })),
-      );
-    }
-  }
-
-  const loginKeys = { user_id: user.id, provider, id: profile.id };
-  const { count } = await db
-    .table('logins')
-    .where(loginKeys)
-    .count('id')
-    .first();
-
-  if (count === '0') {
-    await db.table('logins').insert({
-      ...loginKeys,
-      username: profile.username,
-      tokens: JSON.stringify(tokens),
-      profile: JSON.stringify(profile._json),
-    });
+    const expiresIn = 10 * 60;
+    const token = Math.random();
+    await redis.setexAsync(
+      `passport:${token}`,
+      expiresIn,
+      JSON.stringify({
+        tokens,
+        provider,
+        profile,
+      }),
+    );
+    done(null, false, { message: 'account not found.', token, expiresIn });
   } else {
-    await db
-      .table('logins')
-      .where(loginKeys)
-      .update({
-        username: profile.username,
-        tokens: JSON.stringify(tokens),
-        profile: JSON.stringify(profile._json),
-        updated_at: db.raw('CURRENT_TIMESTAMP'),
-      });
+    done(null, {
+      id: user.id,
+      displayName: user.displayName,
+    });
   }
-
-  return {
-    id: user.id,
-    displayName: user.display_name,
-    imageUrl: user.image_url,
-  };
 }
 
-// https://github.com/jaredhanson/passport-google-oauth2
 passport.use(
-  new GoogleStrategy(
+  new WechatStrategy(
     {
-      clientID: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
-      callbackURL: '/login/google/return',
+      appID: process.env.WECHAT_APPID,
+      appSecret: process.env.WECHAT_SECRET,
+      callbackURL: '/login/wechat/return',
       passReqToCallback: true,
     },
-    async (req, accessToken, refreshToken, profile, done) => {
+    (req, accessToken, refreshToken, profile, done) => {
       try {
-        const user = await login(req, 'google', profile, {
-          accessToken,
-          refreshToken,
-        });
-        done(null, user);
+        login(
+          req,
+          'wechat',
+          {
+            id: profile.unionid || profile.openid,
+            displayName: profile.nickname,
+            username: profile.nickname,
+          },
+          {
+            accessToken,
+            refreshToken,
+          },
+          done,
+        );
       } catch (err) {
         done(err);
       }
@@ -144,42 +101,30 @@ passport.use(
   ),
 );
 
-// https://github.com/jaredhanson/passport-facebook
-// https://developers.facebook.com/docs/facebook-login/permissions/
 passport.use(
-  new FacebookStrategy(
+  new WeiboStrategy(
     {
-      clientID: process.env.FACEBOOK_ID,
-      clientSecret: process.env.FACEBOOK_SECRET,
-      profileFields: [
-        'id',
-        'cover',
-        'name',
-        'age_range',
-        'link',
-        'gender',
-        'locale',
-        'picture',
-        'timezone',
-        'updated_time',
-        'verified',
-        'email',
-      ],
-      callbackURL: '/login/facebook/return',
+      clientID: process.env.WEIBO_APPID,
+      clientSecret: process.env.WEIBO_SECRET,
+      callbackURL: '/login/weibo/return',
       passReqToCallback: true,
     },
-    async (req, accessToken, refreshToken, profile, done) => {
+    (req, accessToken, refreshToken, profile, done) => {
       try {
-        if (profile.emails.length)
-          profile.emails[0].verified = !!profile._json.verified;
-        profile.displayName =
-          profile.displayName ||
-          `${profile.name.givenName} ${profile.name.familyName}`;
-        const user = await login(req, 'facebook', profile, {
-          accessToken,
-          refreshToken,
-        });
-        done(null, user);
+        login(
+          req,
+          'weibo',
+          {
+            id: profile.id,
+            displayName: profile.displayName,
+            username: profile.displayName,
+          },
+          {
+            accessToken,
+            refreshToken,
+          },
+          done,
+        );
       } catch (err) {
         done(err);
       }
@@ -187,29 +132,104 @@ passport.use(
   ),
 );
 
-// https://github.com/jaredhanson/passport-twitter
 passport.use(
-  new TwitterStrategy(
+  new QQStrategy(
     {
-      consumerKey: process.env.TWITTER_KEY,
-      consumerSecret: process.env.TWITTER_SECRET,
-      callbackURL: '/login/twitter/return',
-      includeEmail: true,
-      includeStatus: false,
+      clientID: process.env.QQ_APPID,
+      clientSecret: process.env.QQ_SECRET,
+      callbackURL: '/login/qq/return',
       passReqToCallback: true,
     },
-    async (req, token, tokenSecret, profile, done) => {
+    (req, accessToken, refreshToken, profile, done) => {
       try {
-        if (profile.emails && profile.emails.length)
-          profile.emails[0].verified = true;
-        const user = await login(req, 'twitter', profile, {
-          token,
-          tokenSecret,
-        });
-        done(null, user);
+        login(
+          req,
+          'qq',
+          {
+            id: profile.id,
+            displayName: profile.nickname,
+            username: profile.nickname,
+          },
+          {
+            accessToken,
+            refreshToken,
+          },
+          done,
+        );
       } catch (err) {
         done(err);
       }
+    },
+  ),
+);
+
+passport.use(
+  new LocalStrategy(
+    {
+      passReqToCallback: true,
+    },
+    (req, mobile, verifyCode, done) => {
+      const token =
+        (req.body && req.body.token) || (req.query && req.query.token);
+      redis
+        .getAsync(`passport:${token}`)
+        .then(data => data && JSON.parse(data))
+        .then(async info => {
+          if (info && info.code === verifyCode) {
+            let user = await db
+              .table('mobiles')
+              .where({ mobile, verified: true })
+              .first();
+
+            const { profile, tokens, provider } = info;
+            if (!user) {
+              // eslint-disable-next-line prefer-destructuring
+              user = (await db
+                .table('users')
+                .insert({
+                  displayName: profile.displayName,
+                })
+                .returning('*'))[0];
+
+              await db.table('mobiles').insert({
+                userId: user.id,
+                mobile,
+              });
+            }
+
+            const loginKeys = { userId: user.id, provider, id: profile.id };
+            const { count } = await db
+              .table('logins')
+              .where(loginKeys)
+              .count('id')
+              .first();
+
+            if (count === '0') {
+              await db.table('logins').insert({
+                ...loginKeys,
+                username: profile.username,
+                tokens: JSON.stringify(tokens),
+                profile: JSON.stringify(profile._json),
+              });
+            } else {
+              await db
+                .table('logins')
+                .where(loginKeys)
+                .update({
+                  username: profile.username,
+                  tokens: JSON.stringify(tokens),
+                  profile: JSON.stringify(profile._json),
+                  updated_at: db.raw('CURRENT_TIMESTAMP'),
+                });
+            }
+            done(null, {
+              id: user.id,
+              displayName: user.displayName,
+            });
+          } else {
+            done(null, false, { message: 'Incorrect verify code.' });
+          }
+        });
     },
   ),
 );
