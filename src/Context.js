@@ -14,7 +14,7 @@ import type { request as Request } from 'express';
 import type { t as Translator } from 'i18next';
 
 import db from './db';
-import { mapTo, mapToMany, mapToValues } from './utils';
+import { mapTo, mapToMany } from './utils';
 
 class Context {
   request: Request;
@@ -45,82 +45,76 @@ class Context {
       .then(mapTo(keys, x => x.id)),
   );
 
-  emailById = new DataLoader(keys =>
+  mobileById = new DataLoader(keys =>
     db
-      .table('emails')
+      .table('mobiles')
       .whereIn('id', keys)
       .select()
       .then(mapTo(keys, x => x.id)),
   );
 
-  emailsByUserId = new DataLoader(keys =>
+  wordById = new DataLoader(keys =>
     db
-      .table('emails')
-      .whereIn('user_id', keys)
-      .select()
-      .then(mapToMany(keys, x => x.user_id)),
-  );
-
-  storyById = new DataLoader(keys =>
-    db
-      .table('stories')
+      .table('words')
       .whereIn('id', keys)
       .select()
       .then(mapTo(keys, x => x.id)),
   );
 
-  storyCommentsCount = new DataLoader(keys =>
+  phoneticSymbolById = new DataLoader(keys =>
     db
-      .table('stories')
-      .leftJoin('comments', 'stories.id', 'comments.story_id')
-      .whereIn('stories.id', keys)
-      .groupBy('stories.id')
-      .select('stories.id', db.raw('count(comments.story_id)'))
-      .then(mapToValues(keys, x => x.id, x => x.count)),
-  );
-
-  storyPointsCount = new DataLoader(keys =>
-    db
-      .table('stories')
-      .leftJoin('story_points', 'stories.id', 'story_points.story_id')
-      .whereIn('stories.id', keys)
-      .groupBy('stories.id')
-      .select('stories.id', db.raw('count(story_points.story_id)'))
-      .then(mapToValues(keys, x => x.id, x => x.count)),
-  );
-
-  commentById = new DataLoader(keys =>
-    db
-      .table('comments')
+      .table('phoneticSymbols')
       .whereIn('id', keys)
       .select()
       .then(mapTo(keys, x => x.id)),
   );
 
-  commentsByStoryId = new DataLoader(keys =>
+  exampleById = new DataLoader(keys =>
     db
-      .table('comments')
-      .whereIn('story_id', keys)
+      .table('examples')
+      .whereIn('id', keys)
       .select()
-      .then(mapToMany(keys, x => x.story_id)),
+      .then(mapTo(keys, x => x.id)),
   );
 
-  commentsByParentId = new DataLoader(keys =>
+  definitionById = new DataLoader(keys =>
     db
-      .table('comments')
-      .whereIn('parent_id', keys)
+      .table('definitions')
+      .whereIn('id', keys)
       .select()
-      .then(mapToMany(keys, x => x.parent_id)),
+      .then(mapTo(keys, x => x.id)),
   );
 
-  commentPointsCount = new DataLoader(keys =>
+  mobileByUserId = new DataLoader(keys =>
     db
-      .table('comments')
-      .leftJoin('comment_points', 'comments.id', 'comment_points.comment_id')
-      .whereIn('comments.id', keys)
-      .groupBy('comments.id')
-      .select('comments.id', db.raw('count(comment_points.comment_id)'))
-      .then(mapToValues(keys, x => x.id, x => x.count)),
+      .table('mobiles')
+      .whereIn('userId', keys)
+      .select()
+      .then(mapTo(keys, x => x.userId)),
+  );
+
+  phoneticSymbolsByWordId = new DataLoader(keys =>
+    db
+      .table('phoneticSymbols')
+      .whereIn('wordId', keys)
+      .select()
+      .then(mapToMany(keys, x => x.wordId)),
+  );
+
+  examplesByWordId = new DataLoader(keys =>
+    db
+      .table('examples')
+      .whereIn('wordId', keys)
+      .select()
+      .then(mapToMany(keys, x => x.wordId)),
+  );
+
+  definitionsByWordId = new DataLoader(keys =>
+    db
+      .table('definitions')
+      .whereIn('wordId', keys)
+      .select()
+      .then(mapToMany(keys, x => x.wordId)),
   );
 
   /*

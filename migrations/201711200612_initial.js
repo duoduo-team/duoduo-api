@@ -44,7 +44,7 @@ module.exports.up = async (db) => {
   await db.schema.createTable('words', table => {
     table.uuid('id').notNullable().defaultTo(db.raw('uuid_generate_v1mc()')).primary();
     table.uuid('categoryId').notNullable().references('id').inTable('categories').onDelete('CASCADE').onUpdate('CASCADE');
-    table.string('word', 128).notNullable();
+    table.string('text', 128).notNullable();
     table.timestamps(false, true);
   });
 
@@ -52,7 +52,7 @@ module.exports.up = async (db) => {
   await db.schema.createTable('phoneticSymbols', table => {
     table.uuid('id').notNullable().defaultTo(db.raw('uuid_generate_v1mc()')).primary();
     table.uuid('wordId').notNullable().references('id').inTable('words').onDelete('CASCADE').onUpdate('CASCADE');
-    table.string('symbol', 256).notNullable();
+    table.string('text', 256).notNullable();
     table.string('category', 256).notNullable();
     table.string('pronunciation', 2048).notNullable();
     table.timestamps(false, true);
@@ -62,7 +62,7 @@ module.exports.up = async (db) => {
   await db.schema.createTable('examples', table => {
     table.uuid('id').notNullable().defaultTo(db.raw('uuid_generate_v1mc()')).primary();
     table.uuid('wordId').notNullable().references('id').inTable('words').onDelete('CASCADE').onUpdate('CASCADE');
-    table.string('example', 8192).notNullable();
+    table.string('text', 8192).notNullable();
     table.timestamps(false, true);
   });
 
@@ -71,7 +71,7 @@ module.exports.up = async (db) => {
     table.uuid('id').notNullable().defaultTo(db.raw('uuid_generate_v1mc()')).primary();
     table.uuid('wordId').notNullable().references('id').inTable('words').onDelete('CASCADE').onUpdate('CASCADE');
     table.string('part', 16).notNullable();
-    table.string('definition', 512).notNullable();
+    table.string('text', 512).notNullable();
     table.timestamps(false, true);
   });
 };

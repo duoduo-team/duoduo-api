@@ -9,10 +9,10 @@
 
 /* @flow */
 
-import { GraphQLObjectType, GraphQLList, GraphQLString } from 'graphql';
+import { GraphQLObjectType, GraphQLNonNull, GraphQLString } from 'graphql';
 import { globalIdField } from 'graphql-relay';
 
-import EmailType from './EmailType';
+import MobileType from './MobileType';
 import { nodeInterface } from './Node';
 
 export default new GraphQLObjectType({
@@ -24,22 +24,26 @@ export default new GraphQLObjectType({
 
     displayName: {
       type: GraphQLString,
-      resolve(parent) {
-        return parent.display_name;
+    },
+
+    mobile: {
+      type: new GraphQLNonNull(MobileType),
+      resolve(parent, args, { user, mobileByUserId }) {
+        return parent.id === user.id ? mobileByUserId.load(parent.id) : null;
       },
     },
 
-    imageUrl: {
-      type: GraphQLString,
+    createdAt: {
+      type: new GraphQLNonNull(GraphQLString),
       resolve(parent) {
-        return parent.image_url;
+        return parent.created_at;
       },
     },
 
-    emails: {
-      type: new GraphQLList(EmailType),
-      resolve(parent, args, { user, emailsByUserId }) {
-        return parent.id === user.id ? emailsByUserId.load(parent.id) : null;
+    updatedAt: {
+      type: new GraphQLNonNull(GraphQLString),
+      resolve(parent) {
+        return parent.updated_at;
       },
     },
   },

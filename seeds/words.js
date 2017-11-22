@@ -96,7 +96,7 @@ module.exports.seed = async db => {
               .table('words')
               .insert({
                 categoryId: category.id,
-                word,
+                text: word,
               })
               .returning('id')
               .then(rows => rows[0])
@@ -106,12 +106,12 @@ module.exports.seed = async db => {
                   .insert({
                     wordId,
                     part: faker.lorem.word(),
-                    definition: faker.lorem.word(),
+                    text: faker.lorem.word(),
                   })
                   .then(() =>
                     db.table('phoneticSymbols').insert({
                       wordId,
-                      symbol: faker.lorem.word(),
+                      text: faker.lorem.word(),
                       category: faker.lorem.word(),
                       pronunciation: faker.lorem.word(),
                     }),
@@ -119,7 +119,7 @@ module.exports.seed = async db => {
                   .then(() =>
                     db.table('examples').insert({
                       wordId,
-                      example: faker.lorem.sentence(),
+                      text: faker.lorem.sentence(),
                     }),
                   ),
               ),
