@@ -14,6 +14,7 @@ import { globalIdField } from 'graphql-relay';
 
 import MobileType from './MobileType';
 import { nodeInterface } from './Node';
+import type Context from '../Context';
 
 export default new GraphQLObjectType({
   name: 'User',
@@ -28,7 +29,7 @@ export default new GraphQLObjectType({
 
     mobile: {
       type: new GraphQLNonNull(MobileType),
-      resolve(parent, args, { user, mobileByUserId }) {
+      resolve(parent, args, { user, mobileByUserId }: Context) {
         return parent.id === user.id ? mobileByUserId.load(parent.id) : null;
       },
     },

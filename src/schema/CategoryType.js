@@ -1,3 +1,4 @@
+/* eslint-disable no-use-before-define */
 /**
  * @author lookis on 22/11/2017
  */
@@ -12,8 +13,7 @@ import {
 } from 'graphql';
 import { globalIdField } from 'graphql-relay';
 import { nodeInterface } from './Node';
-
-import WordType from './WordType';
+import type Context from '../Context';
 
 const CategoryType = new GraphQLObjectType({
   name: 'Category',
@@ -28,21 +28,21 @@ const CategoryType = new GraphQLObjectType({
 
     parent: {
       type: CategoryType,
-      resolve(parent, args, { commentById }) {
-        // return parent.parent_id && commentById.load(parent.parent_id);
+      resolve(parent, args, { parentCategoryByChildId }: Context) {
+        return (
+          parent.parent_id && parentCategoryByChildId.load(parent.parent_id)
+        );
       },
     },
 
     children: {
       type: new GraphQLList(CategoryType),
-      resolve(parent, args, { commentById }) {
-        // return parent.parent_id && commentById.load(parent.parent_id);
+      resolve(parent, args, { childrenCategoriesByParentId }: Context) {
+        return (
+          parent.parent_id &&
+          childrenCategoriesByParentId.load(parent.parent_id)
+        );
       },
-    },
-
-    words: {
-      type: new GraphQLList(WordType),
-      resolve(parent, args, {}) {},
     },
   },
 });

@@ -15,6 +15,7 @@ import type { t as Translator } from 'i18next';
 
 import db from './db';
 import { mapTo, mapToMany } from './utils';
+import { UnauthorizedError } from './errors';
 
 class Context {
   request: Request;
@@ -30,7 +31,7 @@ class Context {
   /*
    * Data loaders to be used with GraphQL resolve() functions. For example:
    *
-   *   resolve(post, args, { userById }) {
+   *   resolve(post: any, args: any, { userById }: Context) {
    *     return userById.load(post.author_id);
    *   }
    *
@@ -117,12 +118,15 @@ class Context {
       .then(mapToMany(keys, x => x.wordId)),
   );
 
+  // childrenCategoriesByParentId;
+  // parentCategoryByChildId;
+
   /*
    * Authenticatinon and permissions.
    */
 
   ensureIsAuthenticated() {
-    if (!this.user) throw new Error('Anonymous access is denied.');
+    if (!this.user) throw new UnauthorizedError();
   }
 }
 
