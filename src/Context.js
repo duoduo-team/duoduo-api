@@ -118,8 +118,41 @@ class Context {
       .then(mapToMany(keys, x => x.wordId)),
   );
 
-  // childrenCategoriesByParentId;
-  // parentCategoryByChildId;
+  childrenCategoriesByParentId = new DataLoader(keys => {
+    keys.map(key =>
+      db
+        .raw(
+          ```
+        SELECT node.*
+        FROM categories AS node,
+          categories AS parent,
+          categories AS sub_parent,
+          (
+            SELECT node.id, (COUNT(parent.id) - 1) AS depth
+            FROM categories AS node,
+              categories AS parent
+            WHERE node.lft BETWEEN parent.lft AND parent.rgt
+              AND node.id = ?
+            GROUP BY node.id
+            ORDER BY node.lft
+          )AS sub_tree
+        WHERE node.lft BETWEEN parent.lft AND parent.rgt
+          AND node.lft BETWEEN sub_parent.lft AND sub_parent.rgt
+          AND sub_parent.id = sub_tree.id
+        GROUP BY node.id, sub_tree.depth
+        HAVING (COUNT(parent.name) - (sub_tree.depth + 1)) = 1
+        ORDER BY node.lft;
+        ```,
+          [key],
+        )
+        .then(rows => ({
+          rows,
+        })),
+    );
+  });
+
+  // parentCategoryBychildId;
+  // wordsByCategoryId;
 
   /*
    * Authenticatinon and permissions.

@@ -28,6 +28,7 @@ const CategoryType = new GraphQLObjectType({
 
     parent: {
       type: CategoryType,
+
       resolve(parent, args, { parentCategoryByChildId }: Context) {
         return (
           parent.parent_id && parentCategoryByChildId.load(parent.parent_id)
@@ -38,10 +39,7 @@ const CategoryType = new GraphQLObjectType({
     children: {
       type: new GraphQLList(CategoryType),
       resolve(parent, args, { childrenCategoriesByParentId }: Context) {
-        return (
-          parent.parent_id &&
-          childrenCategoriesByParentId.load(parent.parent_id)
-        );
+        return childrenCategoriesByParentId.load(parent.id);
       },
     },
   },
