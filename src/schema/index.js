@@ -13,6 +13,8 @@ import { GraphQLSchema, GraphQLObjectType } from 'graphql';
 
 import { me } from './User';
 import { node, nodes } from './Node';
+import { words } from './Word';
+import { categoriesByParentId } from './Category';
 
 export default new GraphQLSchema({
   query: new GraphQLObjectType({
@@ -21,6 +23,8 @@ export default new GraphQLSchema({
       me,
       node,
       nodes,
+      words,
+      categoriesByParentId,
     },
   }),
   // mutation: new GraphQLObjectType({

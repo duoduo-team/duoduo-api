@@ -1,4 +1,3 @@
-/* eslint-disable no-use-before-define */
 /**
  * @author lookis on 22/11/2017
  */
@@ -19,7 +18,7 @@ const CategoryType = new GraphQLObjectType({
   name: 'Category',
   interfaces: [nodeInterface],
 
-  fields: {
+  fields: () => ({
     id: globalIdField(),
 
     name: {
@@ -28,11 +27,8 @@ const CategoryType = new GraphQLObjectType({
 
     parent: {
       type: CategoryType,
-
       resolve(parent, args, { parentCategoryByChildId }: Context) {
-        return (
-          parent.parent_id && parentCategoryByChildId.load(parent.parent_id)
-        );
+        return parentCategoryByChildId.load(parent.id);
       },
     },
 
@@ -42,7 +38,7 @@ const CategoryType = new GraphQLObjectType({
         return childrenCategoriesByParentId.load(parent.id);
       },
     },
-  },
+  }),
 });
 
 export default CategoryType;

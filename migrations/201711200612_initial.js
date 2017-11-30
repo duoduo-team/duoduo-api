@@ -6,17 +6,7 @@ module.exports.up = async (db) => {
     // https://www.postgresql.org/docs/current/static/uuid-ossp.html
     table.uuid('id').notNullable().defaultTo(db.raw('uuid_generate_v1mc()')).primary();
     table.string('displayName', 100);
-    table.string('passwordHash', 128);
     table.timestamps(false, true);
-  });
-
-  // Users' mobile number
-  await db.schema.createTable('mobiles', table => {
-    table.uuid('id').notNullable().defaultTo(db.raw('uuid_generate_v1mc()')).primary();
-    table.uuid('userId').notNullable().references('id').inTable('users').onDelete('CASCADE').onUpdate('CASCADE');
-    table.string('mobile', 100).notNullable();
-    table.timestamps(false, true);
-    table.unique(['userId', 'mobile']);
   });
 
   // External logins with security tokens (e.g. Wechat, Weibo, QQ)
@@ -83,7 +73,6 @@ module.exports.down = async (db) => {
   await db.schema.dropTableIfExists('words');
   await db.schema.dropTableIfExists('categories');
   await db.schema.dropTableIfExists('logins');
-  await db.schema.dropTableIfExists('mobiles');
   await db.schema.dropTableIfExists('users');
 };
 

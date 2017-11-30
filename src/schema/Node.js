@@ -18,10 +18,10 @@ const { nodeInterface, nodeField: node, nodesField: nodes } = nodeDefinitions(
     const { type, id } = fromGlobalId(globalId);
 
     switch (type) {
+      case 'Category':
+        return context.categoryById.load(id).then(assignType('Category'));
       case 'User':
         return context.userById.load(id).then(assignType('User'));
-      case 'Mobile':
-        return context.mobileById.load(id).then(assignType('Mobile'));
       case 'Word':
         return context.wordById.load(id).then(assignType('Word'));
       case 'Definition':
@@ -38,10 +38,10 @@ const { nodeInterface, nodeField: node, nodesField: nodes } = nodeDefinitions(
   },
   obj => {
     switch (getType(obj)) {
+      case 'Category':
+        return require('./CategoryType').default;
       case 'User':
         return require('./UserType').default;
-      case 'Mobile':
-        return require('./MobileType').default;
       case 'Word':
         return require('./WordType').default;
       case 'Definition':

@@ -19,15 +19,7 @@ module.exports.seed = async db => {
             .table('users')
             .where('id', '=', rows[0])
             .first()
-            .then(u =>
-              db
-                .table('mobiles')
-                .insert({
-                  userId: u.id,
-                  mobile: faker.phone.phoneNumber(),
-                })
-                .then(() => u),
-            ),
+            .then(u => u),
         )
         .then(row => Object.assign(user, row)),
     ),
