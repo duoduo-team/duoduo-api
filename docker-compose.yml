@@ -14,7 +14,6 @@ services:
       - db
       - redis
     environment:
-      - CI=$CI
       - CORS_ORIGIN=http://localhost:3000,http://localhost:3001
       - DATABASE_URL=postgres://postgres@db:5432/dev
       - DATABASE_DEBUG=false
@@ -61,7 +60,7 @@ services:
 
   # Distributed in-memory cache
   redis:
-    image: redis:4.0.2-alpine
+    image: redis:4.0.6-alpine
     read_only: true
     volumes:
       - redis:/data

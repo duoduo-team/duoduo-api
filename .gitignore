@@ -8,10 +8,7 @@ yarn-error.log
 docker-compose.override.yml
 
 # Editors and IDEs
-.vscode/*
-!.vscode/snippets
-!.vscode/launch.json
-!.vscode/settings.json
+.vscode
 
 .idea/
 **/.DS_Store
